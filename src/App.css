@@ -1,0 +1,33 @@
+@import "../node_modules/office-ui-fabric-react/dist/css/fabric.min.css";
+
+.app {
+  margin: auto;
+  text-align: center;
+  max-width: 500px;
+  background-color: #fff;
+
+  border-radius: 2px;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.2);
+}
+
+.header,
+.content,
+.footer {
+  text-align: left;
+  padding: 20px;
+}
+
+.content {
+  padding: 0 20px 0 20px;
+}
+
+.taskItem {
+  padding: 10px;
+  margin-bottom: 2px;
+  border: 1px solid rgb(240, 240, 240);
+  border-radius: 2px;
+}
+
+.taskItem:hover {
+  background-color: rgb(250, 250, 250);
+}
