@@ -21,11 +21,25 @@
   padding: 0 20px 0 20px;
 }
 
+.headerTitle {
+  display: flex;
+  align-items: center;
+}
+
+.headerTitle > i {
+  margin-right: 10px;
+}
+
 .taskItem {
   padding: 10px;
   margin-bottom: 2px;
   border: 1px solid rgb(240, 240, 240);
   border-radius: 2px;
+}
+
+.taskItem .actions {
+  display: flex;
+  align-items: center;
 }
 
 .taskItem:hover {

@@ -3,7 +3,7 @@ import "./App.css";
 
 import { FluentCustomizations } from '@uifabric/experiments/lib/components/fluent/FluentCustomizations';
 import { FontSizes } from '@uifabric/experiments/lib/components/fluent/FluentType';
-import { Customizer, Fabric, Pivot, PivotItem, ProgressIndicator, TextField, PrimaryButton } from "office-ui-fabric-react";
+import { Customizer, Fabric, Pivot, PivotItem, ProgressIndicator, TextField, PrimaryButton, Icon } from "office-ui-fabric-react";
 import { initializeIcons } from "office-ui-fabric-react/lib/Icons";
 
 import axios from "axios";
@@ -13,6 +13,7 @@ import * as moment from "moment";
 import TaskItem from './Components/TaskItem';
 import { IAppState } from './Models/IAppState';
 import { ITaskModel } from './Models/ITaskModel';
+import ConfirmDialog from './Components/ConfirmDialog';
 
 initializeIcons();
 
@@ -21,15 +22,19 @@ class App extends React.Component<{}, IAppState> {
   constructor(props: {}) {
     super(props);
     this.state = {
-      selectedView: "0",
-      tasks: [],
-      taskName: ""
+      confirmDialogHidden: true,
+      taskIdToDelete: 0,
+      taskName: "",
+      tasks: []
     };
 
     this.onTaskNameChange = this.onTaskNameChange.bind(this);
     this.onTaskChange = this.onTaskChange.bind(this);
     this.onPivotClick = this.onPivotClick.bind(this);
     this.addTask = this.addTask.bind(this);
+    this.onDelete = this.onDelete.bind(this);
+    this.onDeleteConfirmed = this.onDeleteConfirmed.bind(this);
+    this.onDeleteDismissed = this.onDeleteDismissed.bind(this);
   }
 
   public render() {
@@ -40,6 +45,13 @@ class App extends React.Component<{}, IAppState> {
             {this.renderHeader()}
             {this.renderContent()}
             {this.renderFooter()}
+
+            {!this.state.confirmDialogHidden &&
+              <ConfirmDialog
+                onConfirm={this.onDeleteConfirmed}
+                onDismiss={this.onDeleteDismissed}
+              />
+            }
           </div>
         </Fabric>
       </Customizer>
@@ -52,8 +64,11 @@ class App extends React.Component<{}, IAppState> {
         <div className="ms-Grid">
           <div className="ms-Grid-row">
             <div className="ms-Grid-col ms-sm12">
-              <div style={{ fontSize: FontSizes.size16 }}>Task list</div>
-              <div><small>Display list of tasks for you team</small></div>
+              <div className="headerTitle">
+                <Icon iconName={"SkypeCheck"} style={{ fontSize: FontSizes.size42 }} />
+                <span style={{ fontSize: FontSizes.size16 }}>Task list</span>
+              </div>
+              <div><small>Display list of tasks assigned to your team</small></div>
               <br />
             </div>
           </div>
@@ -82,14 +97,7 @@ class App extends React.Component<{}, IAppState> {
   }
 
   public renderContent(): JSX.Element {
-    let tasks: ITaskModel[] = [];
-    if (this.state.selectedView === "0") {
-      tasks = this.state.tasks.filter(x => !x.completed);
-    } else if (this.state.selectedView === "1") {
-      tasks = this.state.tasks.filter(x => x.completed);
-    } else {
-      tasks = this.state.tasks;
-    }
+    const tasks: ITaskModel[] = this.getFilteredTasks();
 
     return (
       <div className="content">
@@ -100,7 +108,8 @@ class App extends React.Component<{}, IAppState> {
                 <TaskItem
                   key={task.id}
                   {...task}
-                  onChange={this.onTaskChange} />
+                  onChange={this.onTaskChange}
+                  onDelete={this.onDelete} />
               )}
             </div>
           </div>
@@ -150,6 +159,19 @@ class App extends React.Component<{}, IAppState> {
     });
   }
 
+  private getFilteredTasks(): ITaskModel[] {
+    const { tasks } = this.state;
+    const { selectedView } = this.state;
+
+    if (selectedView === undefined || selectedView === "0") {
+      return tasks.filter(x => !x.completed);
+    } else if (selectedView === "1") {
+      return tasks.filter(x => x.completed);
+    }
+
+    return tasks;
+  }
+
   private addTask() {
     const { tasks } = this.state;
     const task: ITaskModel = {
@@ -180,6 +202,26 @@ class App extends React.Component<{}, IAppState> {
 
   private onPivotClick(e: any): void {
     this.setState({ selectedView: e.props.itemKey })
+  }
+
+  private onDelete(taskId: number): void {
+    this.setState({ confirmDialogHidden: false, taskIdToDelete: taskId });
+  }
+
+  private onDeleteConfirmed(): void {
+    const { tasks } = this.state;
+    const found: ITaskModel | undefined = tasks.find(x => x.id === this.state.taskIdToDelete);
+    if (found) {
+      const index = tasks.indexOf(found);
+      const updated = update(tasks, { $splice: [[index, 1]] });
+      this.setState({ confirmDialogHidden: true, tasks: updated, taskIdToDelete: 0 });
+    } else {
+      this.setState({ confirmDialogHidden: true, taskIdToDelete: 0 });
+    }
+  }
+
+  private onDeleteDismissed(): void {
+    this.setState({ confirmDialogHidden: true });
   }
 
   private parseName(value: string): string {
